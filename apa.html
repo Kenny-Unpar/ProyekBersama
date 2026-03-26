@@ -2,29 +2,76 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Contoh JavaScript Sederhana</title>
+    <title>Interaktif JavaScript</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             margin-top: 50px;
+            background-color: #f4f4f4;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 200px;
         }
         button {
             padding: 10px 20px;
-            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
+        }
+        button:hover {
+            background-color: #2980b9;
         }
     </style>
 </head>
 <body>
 
-    <h1 id="judul">Halo Dunia!</h1>
-    <button onclick="ubahTeks()">Klik Saya</button>
+<div class="card">
+    <h1 id="judul">Halo!</h1>
+    
+    <p>Masukkan nama kamu:</p>
+    <input type="text" id="namaInput" placeholder="Nama kamu...">
+    <br>
 
-    <script>
-        function ubahTeks() {
-            document.getElementById("judul").innerHTML = "Teks sudah berubah!";
+    <button onclick="sapaUser()">Sapa Saya</button>
+    <button onclick="ubahWarna()">Ubah Warna</button>
+    <button onclick="reset()">Reset</button>
+</div>
+
+<script>
+    function sapaUser() {
+        const nama = document.getElementById("namaInput").value;
+        if (nama === "") {
+            alert("Masukkan nama dulu!");
+        } else {
+            document.getElementById("judul").innerText = "Halo, " + nama + "!";
         }
-    </script>
+    }
+
+    function ubahWarna() {
+        const warna = ["#e74c3c", "#2ecc71", "#f1c40f", "#9b59b6", "#1abc9c"];
+        const random = warna[Math.floor(Math.random() * warna.length)];
+        document.body.style.backgroundColor = random;
+    }
+
+    function reset() {
+        document.getElementById("judul").innerText = "Halo!";
+        document.getElementById("namaInput").value = "";
+        document.body.style.backgroundColor = "#f4f4f4";
+    }
+</script>
 
 </body>
 </html>
