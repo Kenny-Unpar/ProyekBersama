@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Trilateration - App A</title>
+</head>
+<body>
+
+<h3>Input Object Coordinates</h3>
+x0: <input id="x0" type="number" value="100">
+y0: <input id="y0" type="number" value="100">
+<button onclick="compute()">Compute Distances</button>
+
+<p id="output"></p>
+
+<canvas id="canvas" width="400" height="400" style="border:1px solid black;"></canvas>
+
+<script>
+// Satellite positions
+const sats = [
+  {x: 50, y: 50, color: "red"},
+  {x: 300, y: 80, color: "green"},
+  {x: 200, y: 300, color: "blue"}
+];
+
+function distance(x0, y0, x1, y1) {
+  return Math.sqrt((x0 - x1)**2 + (y0 - y1)**2);
+}
+
+function drawCross(ctx, x, y, color) {
+  ctx.strokeStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x-5, y);
+  ctx.lineTo(x+5, y);
+  ctx.moveTo(x, y-5);
+  ctx.lineTo(x, y+5);
+  ctx.stroke();
+}
+
+function compute() {
+  const x0 = parseFloat(document.getElementById("x0").value);
+  const y0 = parseFloat(document.getElementById("y0").value);
+
+  let r = [];
+
+  for (let i = 0; i < 3; i++) {
+    r[i] = distance(x0, y0, sats[i].x, sats[i].y);
+  }
+
+  document.getElementById("output").innerText =
+    `r1=${r[0].toFixed(2)}, r2=${r[1].toFixed(2)}, r3=${r[2].toFixed(2)}`;
+
+  drawScene(x0, y0, r);
+}
+
+function drawScene(x0, y0, r) {
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  ctx.clearRect(0, 0, 400, 400);
+
+  // draw satellites
+  for (let i = 0; i < 3; i++) {
+    drawCross(ctx, sats[i].x, sats[i].y, sats[i].color);
+
+    // draw circles
+    ctx.strokeStyle = sats[i].color;
+    ctx.beginPath();
+    ctx.arc(sats[i].x, sats[i].y, r[i], 0, 2*Math.PI);
+    ctx.stroke();
+  }
+
+  // draw object
+  drawCross(ctx, x0, y0, "black");
+}
+</script>
+
+</body>
+</html>
