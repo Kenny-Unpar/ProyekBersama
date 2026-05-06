@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Trilateration App 2 - Distances to Coordinates</title>
+  <title>Trilateration App 2 - Times to Coordinates</title>
 </head>
 <body>
 
-<h3>App 2: Distances to Coordinates</h3>
+<h3>App 2: Signal Times to Coordinates</h3>
 
 <p>This app uses normalized coordinates from 0 to 100.</p>
 
 <p>
-  r1: <input id="r1" type="number" value="36.06">
-  r2: <input id="r2" type="number" value="40.31">
-  r3: <input id="r3" type="number" value="31.62">
+  t1: <input id="t1" type="number" value="36.06">
+  t2: <input id="t2" type="number" value="47.17">
+  t3: <input id="t3" type="number" value="31.62">
   <button onclick="solve()">Solve Position</button>
 </p>
 
@@ -20,7 +20,7 @@
 
 <canvas
   id="canvas"
-  style="border:1px solid black; width:min(90vw, 60vh); height:min(90vw, 60vh);">
+  style="border:1px solid black; width:min(95vw, 75vh); height:min(95vw, 75vh);">
 </canvas>
 
 <script>
@@ -30,6 +30,10 @@ const X_MAX = 100;
 const Y_MIN = 0;
 const Y_MAX = 100;
 
+// Signal speed
+// For now, C = 1 means 1 coordinate unit per 1 time unit.
+const C = 1;
+
 // Same satellite positions as App 1
 const s1 = {x: 20, y: 80, color: "red"};
 const s2 = {x: 80, y: 75, color: "green"};
@@ -37,18 +41,14 @@ const s3 = {x: 50, y: 20, color: "blue"};
 
 function resizeCanvas() {
   const canvas = document.getElementById("canvas");
-
-  // Get the actual displayed size from CSS
   const rect = canvas.getBoundingClientRect();
 
-  // Set the internal drawing size to match the displayed size
   canvas.width = rect.width;
   canvas.height = rect.height;
 }
 
 function toCanvasX(x) {
   const canvas = document.getElementById("canvas");
-
   return (x - X_MIN) / (X_MAX - X_MIN) * canvas.width;
 }
 
@@ -61,10 +61,11 @@ function toCanvasY(y) {
 
 function toCanvasDistance(r) {
   const canvas = document.getElementById("canvas");
-
-  // Because the logical area is square and the canvas is square,
-  // one scale is enough for distance.
   return r / (X_MAX - X_MIN) * canvas.width;
+}
+
+function timeToDistance(t) {
+  return C * t;
 }
 
 function drawCross(ctx, x, y, color) {
@@ -74,11 +75,9 @@ function drawCross(ctx, x, y, color) {
   ctx.strokeStyle = color;
   ctx.beginPath();
 
-  // Horizontal line
   ctx.moveTo(cx - 6, cy);
   ctx.lineTo(cx + 6, cy);
 
-  // Vertical line
   ctx.moveTo(cx, cy - 6);
   ctx.lineTo(cx, cy + 6);
 
@@ -88,24 +87,29 @@ function drawCross(ctx, x, y, color) {
 function solve() {
   resizeCanvas();
 
-  const r1 = parseFloat(document.getElementById("r1").value);
-  const r2 = parseFloat(document.getElementById("r2").value);
-  const r3 = parseFloat(document.getElementById("r3").value);
+  const t1 = parseFloat(document.getElementById("t1").value);
+  const t2 = parseFloat(document.getElementById("t2").value);
+  const t3 = parseFloat(document.getElementById("t3").value);
+
+  // Convert signal times to distances
+  const r1 = timeToDistance(t1);
+  const r2 = timeToDistance(t2);
+  const r3 = timeToDistance(t3);
 
   // First linear equation:
-  // A x + B y = C
+  // A x + B y = C_eq
   const A = 2 * (s2.x - s1.x);
   const B = 2 * (s2.y - s1.y);
-  const C =
+  const C_eq =
     r1*r1 - r2*r2
     - s1.x*s1.x + s2.x*s2.x
     - s1.y*s1.y + s2.y*s2.y;
 
   // Second linear equation:
-  // D x + E y = F
+  // D x + E y = F_eq
   const D = 2 * (s3.x - s1.x);
   const E = 2 * (s3.y - s1.y);
-  const F =
+  const F_eq =
     r1*r1 - r3*r3
     - s1.x*s1.x + s3.x*s3.x
     - s1.y*s1.y + s3.y*s3.y;
@@ -120,8 +124,8 @@ function solve() {
   }
 
   // Solve using Cramer's rule
-  const x0 = (C * E - B * F) / denominator;
-  const y0 = (A * F - C * D) / denominator;
+  const x0 = (C_eq * E - B * F_eq) / denominator;
+  const y0 = (A * F_eq - C_eq * D) / denominator;
 
   document.getElementById("output").innerText =
     `x0 = ${x0.toFixed(2)}, y0 = ${y0.toFixed(2)}`;
@@ -141,7 +145,6 @@ function drawScene(x0, y0, r1, r2, r3) {
     {x: s3.x, y: s3.y, color: s3.color, r: r3}
   ];
 
-  // Draw satellites and circles
   for (let i = 0; i < 3; i++) {
     drawCross(ctx, sats[i].x, sats[i].y, sats[i].color);
 
@@ -155,14 +158,10 @@ function drawScene(x0, y0, r1, r2, r3) {
     ctx.stroke();
   }
 
-  // Draw reconstructed object
   drawCross(ctx, x0, y0, "black");
 }
 
-// Draw once when the page opens
 window.onload = solve;
-
-// Redraw when screen size changes
 window.onresize = solve;
 </script>
 
