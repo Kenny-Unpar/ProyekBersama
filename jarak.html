@@ -1,23 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Trilateration App 1 - Normalized Coordinates</title>
+  <title>Trilateration App 1 - Coordinates to Distances</title>
 </head>
 <body>
 
 <h3>App 1: Coordinates to Distances</h3>
 
-<p>
-  This app uses normalized coordinates from 0 to 100.
-</p>
+<p>This app uses normalized coordinates from 0 to 100.</p>
 
-x0: <input id="x0" type="number" value="40">
-y0: <input id="y0" type="number" value="50">
-<button onclick="compute()">Compute Distances</button>
+<p>
+  x0: <input id="x0" type="number" value="40">
+  y0: <input id="y0" type="number" value="50">
+  <button onclick="compute()">Compute Distances</button>
+</p>
 
 <p id="output"></p>
 
-<canvas id="canvas" style="border:1px solid black; width:100%; max-width:500px;"></canvas>
+<canvas
+  id="canvas"
+  style="border:1px solid black; width:min(90vw, 60vh); height:min(90vw, 60vh);">
+</canvas>
 
 <script>
 // Logical coordinate system
@@ -36,29 +39,32 @@ const sats = [
 function resizeCanvas() {
   const canvas = document.getElementById("canvas");
 
-  // Make the canvas square
-  const displayWidth = canvas.clientWidth;
-  canvas.width = displayWidth;
-  canvas.height = displayWidth;
+  // Get the actual displayed size from CSS
+  const rect = canvas.getBoundingClientRect();
+
+  // Set the internal drawing size to match the displayed size
+  canvas.width = rect.width;
+  canvas.height = rect.height;
 }
 
 function toCanvasX(x) {
   const canvas = document.getElementById("canvas");
+
   return (x - X_MIN) / (X_MAX - X_MIN) * canvas.width;
 }
 
 function toCanvasY(y) {
   const canvas = document.getElementById("canvas");
 
-  // Canvas y-axis points downward, so we flip it
+  // Flip y because canvas y-axis points downward
   return canvas.height - (y - Y_MIN) / (Y_MAX - Y_MIN) * canvas.height;
 }
 
 function toCanvasDistance(r) {
   const canvas = document.getElementById("canvas");
 
-  // Since x and y ranges are both 0 to 100 and canvas is square,
-  // we can use the same scale for distances.
+  // Because the logical area is square and the canvas is square,
+  // one scale is enough for distance.
   return r / (X_MAX - X_MIN) * canvas.width;
 }
 
@@ -72,10 +78,15 @@ function drawCross(ctx, x, y, color) {
 
   ctx.strokeStyle = color;
   ctx.beginPath();
+
+  // Horizontal line
   ctx.moveTo(cx - 6, cy);
   ctx.lineTo(cx + 6, cy);
+
+  // Vertical line
   ctx.moveTo(cx, cy - 6);
   ctx.lineTo(cx, cy + 6);
+
   ctx.stroke();
 }
 
@@ -85,7 +96,7 @@ function compute() {
   const x0 = parseFloat(document.getElementById("x0").value);
   const y0 = parseFloat(document.getElementById("y0").value);
 
-  let r = [];
+  const r = [];
 
   for (let i = 0; i < 3; i++) {
     r[i] = distance(x0, y0, sats[i].x, sats[i].y);
@@ -103,7 +114,7 @@ function drawScene(x0, y0, r) {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw satellites and circles
+  // Draw satellites and distance circles
   for (let i = 0; i < 3; i++) {
     drawCross(ctx, sats[i].x, sats[i].y, sats[i].color);
 
@@ -121,10 +132,10 @@ function drawScene(x0, y0, r) {
   drawCross(ctx, x0, y0, "black");
 }
 
-// Initial drawing
+// Draw once when the page opens
 window.onload = compute;
 
-// Redraw when window size changes
+// Redraw when screen size changes
 window.onresize = compute;
 </script>
 
