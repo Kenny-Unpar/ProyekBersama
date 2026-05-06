@@ -1,90 +1,152 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Jarak → Posisi</title>
+  <title>Trilateration App 2 - Normalized Coordinates</title>
 </head>
 <body>
 
-<h3>Masukkan Jarak</h3>
-r1: <input id="r1" type="number">
-r2: <input id="r2" type="number">
-r3: <input id="r3" type="number">
-<button onclick="solve()">Tentukan Posisi</button>
+<h3>App 2: Distances to Coordinates</h3>
+
+<p>
+  This app uses normalized coordinates from 0 to 100.
+</p>
+
+r1: <input id="r1" type="number" value="36.06">
+r2: <input id="r2" type="number" value="50.99">
+r3: <input id="r3" type="number" value="31.62">
+<button onclick="solve()">Solve Position</button>
 
 <p id="output"></p>
 
-<canvas id="canvas" width="400" height="400" style="border:1px solid black;"></canvas>
+<canvas id="canvas" style="border:1px solid black; width:100%; max-width:500px;"></canvas>
 
 <script>
-// same satellites
-const s1 = {x: 50, y: 50};
-const s2 = {x: 300, y: 80};
-const s3 = {x: 200, y: 300};
+// Logical coordinate system
+const X_MIN = 0;
+const X_MAX = 100;
+const Y_MIN = 0;
+const Y_MAX = 100;
+
+// Same satellite positions as App 1
+const s1 = {x: 20, y: 80, color: "red"};
+const s2 = {x: 80, y: 75, color: "green"};
+const s3 = {x: 50, y: 20, color: "blue"};
+
+function resizeCanvas() {
+  const canvas = document.getElementById("canvas");
+
+  // Make the canvas square
+  const displayWidth = canvas.clientWidth;
+  canvas.width = displayWidth;
+  canvas.height = displayWidth;
+}
+
+function toCanvasX(x) {
+  const canvas = document.getElementById("canvas");
+  return (x - X_MIN) / (X_MAX - X_MIN) * canvas.width;
+}
+
+function toCanvasY(y) {
+  const canvas = document.getElementById("canvas");
+
+  // Canvas y-axis points downward, so we flip it
+  return canvas.height - (y - Y_MIN) / (Y_MAX - Y_MIN) * canvas.height;
+}
+
+function toCanvasDistance(r) {
+  const canvas = document.getElementById("canvas");
+
+  // Since x and y ranges are both 0 to 100 and canvas is square,
+  // one scale is enough.
+  return r / (X_MAX - X_MIN) * canvas.width;
+}
 
 function drawCross(ctx, x, y, color) {
+  const cx = toCanvasX(x);
+  const cy = toCanvasY(y);
+
   ctx.strokeStyle = color;
   ctx.beginPath();
-  ctx.moveTo(x-5, y);
-  ctx.lineTo(x+5, y);
-  ctx.moveTo(x, y-5);
-  ctx.lineTo(x, y+5);
+  ctx.moveTo(cx - 6, cy);
+  ctx.lineTo(cx + 6, cy);
+  ctx.moveTo(cx, cy - 6);
+  ctx.lineTo(cx, cy + 6);
   ctx.stroke();
 }
 
 function solve() {
-  let r1 = parseFloat(document.getElementById("r1").value);
-  let r2 = parseFloat(document.getElementById("r2").value);
-  let r3 = parseFloat(document.getElementById("r3").value);
+  resizeCanvas();
 
-  // linear equations
-  let A = 2*(s2.x - s1.x);
-  let B = 2*(s2.y - s1.y);
-  let C = r1*r1 - r2*r2 - s1.x*s1.x + s2.x*s2.x - s1.y*s1.y + s2.y*s2.y;
+  const r1 = parseFloat(document.getElementById("r1").value);
+  const r2 = parseFloat(document.getElementById("r2").value);
+  const r3 = parseFloat(document.getElementById("r3").value);
 
-  let D = 2*(s3.x - s1.x);
-  let E = 2*(s3.y - s1.y);
-  let F = r1*r1 - r3*r3 - s1.x*s1.x + s3.x*s3.x - s1.y*s1.y + s3.y*s3.y;
+  // First linear equation: A x + B y = C
+  const A = 2 * (s2.x - s1.x);
+  const B = 2 * (s2.y - s1.y);
+  const C =
+    r1*r1 - r2*r2
+    - s1.x*s1.x + s2.x*s2.x
+    - s1.y*s1.y + s2.y*s2.y;
 
-  // solve 2x2 system
-  let denom = A*E - B*D;
+  // Second linear equation: D x + E y = F
+  const D = 2 * (s3.x - s1.x);
+  const E = 2 * (s3.y - s1.y);
+  const F =
+    r1*r1 - r3*r3
+    - s1.x*s1.x + s3.x*s3.x
+    - s1.y*s1.y + s3.y*s3.y;
 
-  if (denom === 0) {
-    document.getElementById("output").innerText = "No unique solution";
+  const denominator = A * E - B * D;
+
+  if (Math.abs(denominator) < 0.000001) {
+    document.getElementById("output").innerText =
+      "No unique solution. The satellite positions may be problematic.";
     return;
   }
 
-  let x = (C*E - B*F) / denom;
-  let y = (A*F - C*D) / denom;
+  const x0 = (C * E - B * F) / denominator;
+  const y0 = (A * F - C * D) / denominator;
 
   document.getElementById("output").innerText =
-    `x0=${x.toFixed(2)}, y0=${y.toFixed(2)}`;
+    `x0 = ${x0.toFixed(2)}, y0 = ${y0.toFixed(2)}`;
 
-  drawScene(x, y, r1, r2, r3);
+  drawScene(x0, y0, r1, r2, r3);
 }
 
 function drawScene(x0, y0, r1, r2, r3) {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
 
-  ctx.clearRect(0, 0, 400, 400);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  let sats = [
-    { ...s1, color: "red", r: r1 },
-    { ...s2, color: "green", r: r2 },
-    { ...s3, color: "blue", r: r3 }
+  const sats = [
+    {x: s1.x, y: s1.y, color: s1.color, r: r1},
+    {x: s2.x, y: s2.y, color: s2.color, r: r2},
+    {x: s3.x, y: s3.y, color: s3.color, r: r3}
   ];
 
-  for (let s of sats) {
-    drawCross(ctx, s.x, s.y, s.color);
+  for (let i = 0; i < 3; i++) {
+    drawCross(ctx, sats[i].x, sats[i].y, sats[i].color);
 
-    ctx.strokeStyle = s.color;
+    const cx = toCanvasX(sats[i].x);
+    const cy = toCanvasY(sats[i].y);
+    const cr = toCanvasDistance(sats[i].r);
+
+    ctx.strokeStyle = sats[i].color;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, 2*Math.PI);
+    ctx.arc(cx, cy, cr, 0, 2 * Math.PI);
     ctx.stroke();
   }
 
   drawCross(ctx, x0, y0, "black");
 }
+
+// Initial drawing
+window.onload = solve;
+
+// Redraw when window size changes
+window.onresize = solve;
 </script>
 
 </body>
