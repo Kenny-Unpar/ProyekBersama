@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Trilateration App 2 - Normalized Coordinates</title>
+  <title>Trilateration App 2 - Distances to Coordinates</title>
 </head>
 <body>
 
 <h3>App 2: Distances to Coordinates</h3>
 
-<p>
-  This app uses normalized coordinates from 0 to 100.
-</p>
+<p>This app uses normalized coordinates from 0 to 100.</p>
 
-r1: <input id="r1" type="number" value="36.06">
-r2: <input id="r2" type="number" value="50.99">
-r3: <input id="r3" type="number" value="31.62">
-<button onclick="solve()">Solve Position</button>
+<p>
+  r1: <input id="r1" type="number" value="36.06">
+  r2: <input id="r2" type="number" value="40.31">
+  r3: <input id="r3" type="number" value="31.62">
+  <button onclick="solve()">Solve Position</button>
+</p>
 
 <p id="output"></p>
 
-<canvas id="canvas" style="border:1px solid black; width:100%; max-width:500px;"></canvas>
+<canvas
+  id="canvas"
+  style="border:1px solid black; width:min(90vw, 60vh); height:min(90vw, 60vh);">
+</canvas>
 
 <script>
 // Logical coordinate system
@@ -35,29 +38,32 @@ const s3 = {x: 50, y: 20, color: "blue"};
 function resizeCanvas() {
   const canvas = document.getElementById("canvas");
 
-  // Make the canvas square
-  const displayWidth = canvas.clientWidth;
-  canvas.width = displayWidth;
-  canvas.height = displayWidth;
+  // Get the actual displayed size from CSS
+  const rect = canvas.getBoundingClientRect();
+
+  // Set the internal drawing size to match the displayed size
+  canvas.width = rect.width;
+  canvas.height = rect.height;
 }
 
 function toCanvasX(x) {
   const canvas = document.getElementById("canvas");
+
   return (x - X_MIN) / (X_MAX - X_MIN) * canvas.width;
 }
 
 function toCanvasY(y) {
   const canvas = document.getElementById("canvas");
 
-  // Canvas y-axis points downward, so we flip it
+  // Flip y because canvas y-axis points downward
   return canvas.height - (y - Y_MIN) / (Y_MAX - Y_MIN) * canvas.height;
 }
 
 function toCanvasDistance(r) {
   const canvas = document.getElementById("canvas");
 
-  // Since x and y ranges are both 0 to 100 and canvas is square,
-  // one scale is enough.
+  // Because the logical area is square and the canvas is square,
+  // one scale is enough for distance.
   return r / (X_MAX - X_MIN) * canvas.width;
 }
 
@@ -67,10 +73,15 @@ function drawCross(ctx, x, y, color) {
 
   ctx.strokeStyle = color;
   ctx.beginPath();
+
+  // Horizontal line
   ctx.moveTo(cx - 6, cy);
   ctx.lineTo(cx + 6, cy);
+
+  // Vertical line
   ctx.moveTo(cx, cy - 6);
   ctx.lineTo(cx, cy + 6);
+
   ctx.stroke();
 }
 
@@ -81,7 +92,8 @@ function solve() {
   const r2 = parseFloat(document.getElementById("r2").value);
   const r3 = parseFloat(document.getElementById("r3").value);
 
-  // First linear equation: A x + B y = C
+  // First linear equation:
+  // A x + B y = C
   const A = 2 * (s2.x - s1.x);
   const B = 2 * (s2.y - s1.y);
   const C =
@@ -89,7 +101,8 @@ function solve() {
     - s1.x*s1.x + s2.x*s2.x
     - s1.y*s1.y + s2.y*s2.y;
 
-  // Second linear equation: D x + E y = F
+  // Second linear equation:
+  // D x + E y = F
   const D = 2 * (s3.x - s1.x);
   const E = 2 * (s3.y - s1.y);
   const F =
@@ -97,6 +110,7 @@ function solve() {
     - s1.x*s1.x + s3.x*s3.x
     - s1.y*s1.y + s3.y*s3.y;
 
+  // Determinant of the 2x2 system
   const denominator = A * E - B * D;
 
   if (Math.abs(denominator) < 0.000001) {
@@ -105,6 +119,7 @@ function solve() {
     return;
   }
 
+  // Solve using Cramer's rule
   const x0 = (C * E - B * F) / denominator;
   const y0 = (A * F - C * D) / denominator;
 
@@ -126,6 +141,7 @@ function drawScene(x0, y0, r1, r2, r3) {
     {x: s3.x, y: s3.y, color: s3.color, r: r3}
   ];
 
+  // Draw satellites and circles
   for (let i = 0; i < 3; i++) {
     drawCross(ctx, sats[i].x, sats[i].y, sats[i].color);
 
@@ -139,13 +155,14 @@ function drawScene(x0, y0, r1, r2, r3) {
     ctx.stroke();
   }
 
+  // Draw reconstructed object
   drawCross(ctx, x0, y0, "black");
 }
 
-// Initial drawing
+// Draw once when the page opens
 window.onload = solve;
 
-// Redraw when window size changes
+// Redraw when screen size changes
 window.onresize = solve;
 </script>
 
