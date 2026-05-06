@@ -1,42 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Posisi → Jarak</title>
+  <title>Trilateration App 1 - Normalized Coordinates</title>
 </head>
 <body>
 
-<h3>Masukkan Koordinat Benda</h3>
-x0: <input id="x0" type="number" value="100">
-y0: <input id="y0" type="number" value="100">
-<button onclick="compute()">Hitung Jarak</button>
+<h3>App 1: Coordinates to Distances</h3>
+
+<p>
+  This app uses normalized coordinates from 0 to 100.
+</p>
+
+x0: <input id="x0" type="number" value="40">
+y0: <input id="y0" type="number" value="50">
+<button onclick="compute()">Compute Distances</button>
 
 <p id="output"></p>
 
-<canvas id="canvas" width="400" height="400" style="border:1px solid black;"></canvas>
+<canvas id="canvas" style="border:1px solid black; width:100%; max-width:500px;"></canvas>
 
 <script>
-// Satellite positions
+// Logical coordinate system
+const X_MIN = 0;
+const X_MAX = 100;
+const Y_MIN = 0;
+const Y_MAX = 100;
+
+// Satellite positions in logical coordinates
 const sats = [
-  {x: 50, y: 50, color: "red"},
-  {x: 300, y: 80, color: "green"},
-  {x: 200, y: 300, color: "blue"}
+  {x: 20, y: 80, color: "red"},
+  {x: 80, y: 75, color: "green"},
+  {x: 50, y: 20, color: "blue"}
 ];
+
+function resizeCanvas() {
+  const canvas = document.getElementById("canvas");
+
+  // Make the canvas square
+  const displayWidth = canvas.clientWidth;
+  canvas.width = displayWidth;
+  canvas.height = displayWidth;
+}
+
+function toCanvasX(x) {
+  const canvas = document.getElementById("canvas");
+  return (x - X_MIN) / (X_MAX - X_MIN) * canvas.width;
+}
+
+function toCanvasY(y) {
+  const canvas = document.getElementById("canvas");
+
+  // Canvas y-axis points downward, so we flip it
+  return canvas.height - (y - Y_MIN) / (Y_MAX - Y_MIN) * canvas.height;
+}
+
+function toCanvasDistance(r) {
+  const canvas = document.getElementById("canvas");
+
+  // Since x and y ranges are both 0 to 100 and canvas is square,
+  // we can use the same scale for distances.
+  return r / (X_MAX - X_MIN) * canvas.width;
+}
 
 function distance(x0, y0, x1, y1) {
   return Math.sqrt((x0 - x1)**2 + (y0 - y1)**2);
 }
 
 function drawCross(ctx, x, y, color) {
+  const cx = toCanvasX(x);
+  const cy = toCanvasY(y);
+
   ctx.strokeStyle = color;
   ctx.beginPath();
-  ctx.moveTo(x-5, y);
-  ctx.lineTo(x+5, y);
-  ctx.moveTo(x, y-5);
-  ctx.lineTo(x, y+5);
+  ctx.moveTo(cx - 6, cy);
+  ctx.lineTo(cx + 6, cy);
+  ctx.moveTo(cx, cy - 6);
+  ctx.lineTo(cx, cy + 6);
   ctx.stroke();
 }
 
 function compute() {
+  resizeCanvas();
+
   const x0 = parseFloat(document.getElementById("x0").value);
   const y0 = parseFloat(document.getElementById("y0").value);
 
@@ -47,7 +92,7 @@ function compute() {
   }
 
   document.getElementById("output").innerText =
-    `r1=${r[0].toFixed(2)}, r2=${r[1].toFixed(2)}, r3=${r[2].toFixed(2)}`;
+    `r1 = ${r[0].toFixed(2)}, r2 = ${r[1].toFixed(2)}, r3 = ${r[2].toFixed(2)}`;
 
   drawScene(x0, y0, r);
 }
@@ -56,22 +101,31 @@ function drawScene(x0, y0, r) {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
 
-  ctx.clearRect(0, 0, 400, 400);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // draw satellites
+  // Draw satellites and circles
   for (let i = 0; i < 3; i++) {
     drawCross(ctx, sats[i].x, sats[i].y, sats[i].color);
 
-    // draw circles
+    const cx = toCanvasX(sats[i].x);
+    const cy = toCanvasY(sats[i].y);
+    const cr = toCanvasDistance(r[i]);
+
     ctx.strokeStyle = sats[i].color;
     ctx.beginPath();
-    ctx.arc(sats[i].x, sats[i].y, r[i], 0, 2*Math.PI);
+    ctx.arc(cx, cy, cr, 0, 2 * Math.PI);
     ctx.stroke();
   }
 
-  // draw object
+  // Draw object
   drawCross(ctx, x0, y0, "black");
 }
+
+// Initial drawing
+window.onload = compute;
+
+// Redraw when window size changes
+window.onresize = compute;
 </script>
 
 </body>
